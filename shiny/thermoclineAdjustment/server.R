@@ -21,7 +21,16 @@ function(input, output) {
     con <- dbConnect(MySQL(),user="webuser",password="webuserpass",dbname=db,host="")
     profile <- dbGetQuery(con, query)
     dbDisconnect(con)
-    query=paste('SELECT temp, depth from AMT where date BETWEEN \'',profile$startDate[1],'\' and \'',profile$endDate[1],'\'  and temp is not null ORDER BY depth ')
+    
+    # last date year
+    db='processed'
+    query=paste('SELECT startDate, endDate from profile WHERE endDate IN (SELECT MAX(endDate) FROM profile WHERE YEAR(endDate)=YEAR(','\'',input$date,'\'))')
+    print(query)
+    con <- dbConnect(MySQL(),user="webuser",password="webuserpass",dbname=db,host="")
+    profileFin <- dbGetQuery(con, query)
+    dbDisconnect(con)
+
+    query=paste('SELECT temp, depth from AMT where date BETWEEN \'',profile$startDate[1],'\' and \'',profileFin$endDate[1],'\'  and temp is not null ORDER BY depth ')
     con <- dbConnect(MySQL(),user="webuser",password="webuserpass",dbname=db,host="")
     profile <- dbGetQuery(con, query)
     dbDisconnect(con)
@@ -29,11 +38,11 @@ function(input, output) {
     print(length(dat$x))
     source("functions.R")
     print(min(dat$x))
-    print(getTe(dat))
+    print(getTeCpp(dat))
     if(length(dat$x) > 9)
     {
         #Hallo los distintos parametros
-        Te <- getTe(dat)
+        Te <- getTeCpp(dat)
         Th <- min(dat$x)
         #Optim es el solver que ajusta la curva a los valores de temp
         result <- optim(par = c(0, 10), min.RSS, data = dat)
